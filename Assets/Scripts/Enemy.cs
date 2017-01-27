@@ -1,0 +1,64 @@
+﻿using UnityEngine;
+using System.Collections;
+using System;
+
+public class Enemy : MovingObject {
+
+    public int playerDamage;
+
+    private Animator animator;
+    private Transform target;
+    private bool skipMove;
+
+	// Use this for initialization
+	protected override void Start ()
+    {
+        GameManager.instance.AddEnemiesToList(this);
+        animator = GetComponent<Animator>();
+        target = GameObject.FindGameObjectWithTag("Player").transform;
+
+        base.Start();
+	}
+
+    protected override void AttemptMove<T>(int xDir, int yDir)
+    {
+        if(skipMove)
+        {
+            skipMove = false;
+            return;
+        }
+
+        base.AttemptMove<T>(xDir, yDir);
+
+        skipMove = true;
+    }
+
+    public void MoveEnemy()
+    {
+        int xDir = 0;
+        int yDir = 0;
+
+        //check to see if x-coordinates are similar, which indicates they are in the same column
+        if(Mathf.Abs(target.position.x - transform.position.x) < float.Epsilon)
+        {
+            //if the target position is greater than enemy position move up otherwise move down
+            yDir = target.position.y > transform.position.y ? 1 : -1;
+        }
+        else
+        {
+            //if target position is great than enemy position move right otherwise move left
+            xDir = target.position.x > transform.position.x ? 1 : -1;
+        }
+
+        AttemptMove<Player>(xDir, yDir);
+    }
+
+    protected override void OnCantMove<T>(T component)
+    {
+        Player hitPlayer = component as Player;
+
+        animator.SetTrigger("enemyAttack");
+
+        hitPlayer.LoseFood(playerDamage);
+    }
+}
